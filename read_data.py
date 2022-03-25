@@ -1,4 +1,5 @@
-from random import random
+from datetime import datetime
+from random import random, sample
 
 
 code_to_desc = {
@@ -91,8 +92,83 @@ def gen_sample(patient_id, num_samples=None):
     return samples
 
 
+def read_remote_control_data(neighbour_ids, self_id):
+    messages = {}
+
+    for p_id in neighbour_ids + [self_id]:
+        messages[p_id] = {}
+
+        patient_id = "0"+str(p_id) if p_id < 10 else str(neighbour_ids)
+        patient_file = 'Diabetes-Data/data-{}'.format(patient_id)
+
+        with open(patient_file) as f:
+            for line in f.readlines():
+                date, time, code, value = line.split('\t')
+                
+                if date not in messages[p_id]:
+                    messages[p_id][date] = []
+               
+                if int(code) in {33, 34, 35}:
+                    messages[p_id][date].append({
+                        "time": time,
+                        "insulin_value": value.strip('\n')
+                    })
+
+    return get_most_presses(messages)
+
+
+def sample_glucose_reading(glucose_sensor_msg):
+    sampled_glucose_readings = glucose_sensor_msg.copy()
+
+    for msg_ind, msg in enumerate(glucose_sensor_msg):
+        print(glucose_sensor_msg[msg_ind]["time"])
+        current_reading = datetime.strptime(glucose_sensor_msg[msg_ind]["time"],"%H:%M")
+        if msg_ind==len(glucose_sensor_msg)-1:
+            next_reading = datetime.strptime('00:00',"%H:%M")
+        else:
+            next_reading = datetime.strptime(glucose_sensor_msg[msg_ind+1]["time"],"%H:%M")
+        
+        time_diff = (next_reading-current_reading).seconds/60
+        samples_generated = int(time_diff/3)
+        sampled_glucose_readings.extend([glucose_sensor_msg[msg_ind] for i in range(samples_generated)])
+
+    return sample_glucose_reading
+
+
+def get_most_presses(messages):
+    for p_id in messages.keys():
+        msg_per_patient = messages[p_id]
+        most_msg_day = max(msg_per_patient, key= lambda x: len(msg_per_patient[x]))
+        messages[p_id] = {
+            "insulin_dosage": msg_per_patient[most_msg_day],
+            "date": most_msg_day
+        }
+    return messages
+
+
+def read_glucose_sensor_data(self_id, most_msg_day):
+    messages = []
+
+    patient_id = "0"+str(self_id) if self_id < 10 else str(self_id)
+    patient_file = 'Diabetes-Data/data-{}'.format(patient_id)
+
+    with open(patient_file) as f:
+        for line in f.readlines():
+            date, time, code, value = line.split('\t')
+            
+            if date==most_msg_day:
+                if int(code) in set(range(57, 64)).union({48}):
+                    messages.append({
+                        "time": time,
+                        "blood_glucose": value.strip('\n')
+                    })
+
+    return messages
+
 
 if __name__ == "__main__":
     #print_code_in_english(1)
-    samples = gen_sample(1, num_samples=None)
-    print(samples)
+    self_id = 4
+    remote_control_msg = read_remote_control_data([1, 2], self_id)
+    glucose_sensor_msg = read_glucose_sensor_data(self_id, remote_control_msg[self_id]["date"])
+    sample_glucose_reading(glucose_sensor_msg)
