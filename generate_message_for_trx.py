@@ -66,4 +66,4 @@ if __name__ == "__main__":
     remote_control_msg = read_remote_control_data([1, 2], self_id)
     print(remote_control_msg)
 
-    gen_transmitted_msg_remote_control(remote_control_msg)
+    rc_transmitted_msg = gen_transmitted_msg_remote_control(remote_control_msg)
