@@ -8,6 +8,20 @@ from crccheck.crc import Crc8Wcdma
 from read_data import read_remote_control_data
 
 
+"""
+1. usual communication
+2. encryption 
+3. encryption + optimization 
+4. encryption + optimization + mac
+
+Possibe options:
+Todo: 
+5. encryption + mac
+6. usual + mac
+7. usual + optimization + mac
+"""
+
+
 def gen_rc_SN(num_neighbour, opt=False):
     serial_nums = {}
     for i in range(num_neighbour+1):
@@ -55,7 +69,7 @@ def gen_transmitted_msg_remote_control(remote_control_msg, enc=False, opt=False)
 
     return rc_transmitted_msg
 
-
+#1
 def construct_message_rc(message, rc_id, ctr):
     msg_button_press = []
 
@@ -77,6 +91,7 @@ def construct_message_rc(message, rc_id, ctr):
     return msg_button_press
 
 
+#2
 def construct_message_rc_enc_without_opt_without_mac(message, rc_id, ctr):
     key = os.urandom(16)
     cipher = AES.new(key, AES.MODE_CTR)
@@ -104,6 +119,7 @@ def construct_message_rc_enc_without_opt_without_mac(message, rc_id, ctr):
     return msg_button_press
 
 
+#3
 def construct_message_rc_enc_with_opt_without_mac(message, rc_id, ctr):
     key = os.urandom(16)
     cipher = AES.new(key, AES.MODE_CTR)
@@ -131,7 +147,7 @@ def construct_message_rc_enc_with_opt_without_mac(message, rc_id, ctr):
     return msg_button_press
 
 
-
+#4
 def construct_message_rc_enc_with_opt_with_mac(message, rc_id, ctr):
     key_enc = os.urandom(16)
     key_mac = os.urandom(16)
